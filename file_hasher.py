@@ -43,7 +43,6 @@ class Hasher:
                     self.hasher.update(chunk)
 
             print(f'\n{self.algo}: {self.hasher.hexdigest()}')
-
         except Exception as e:
             print(f'Something went wrong: {e}')
 
@@ -60,7 +59,6 @@ class Hasher:
                     for chunk in iter(lambda: response.read(4096), b''):
                         self.hasher.update(chunk)
                 print(f'\n{self.url} \n{self.algo}: {self.hasher.hexdigest()}')
-
             except Exception as e:
                 print(f'\nSomething went wrong: {e}')
 
@@ -72,7 +70,6 @@ class Hasher:
             print(f'\nDownloading: {self.download}')
             wget.download(self.download, str(out))
             print('\n\nFile written to: {}'.format(str(out) + '\\' + self.download.split('/')[-1]))
-
         except Exception as e:
             exit(f'\nwget error: {e}')
 
