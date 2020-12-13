@@ -6,8 +6,8 @@ import argparse
 
 example = '''
 python file_hasher.py -f \\temp\\evil.exe --sha256
-python file_hasher.py -u http://www.xbit.cc/images/file1.jpg --sha1
-python file_hasher.py --download http://www.xbit.cc/images/file1.jpg
+python file_hasher.py -u <url> --sha1
+python file_hasher.py -d <url>
 '''
 
 hash_options = []
@@ -89,7 +89,7 @@ if __name__ == '__main__':
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-f', '--file', help='Full path to file on disk')
     parser.add_argument('-u', '--url', help='URL of file')
-    parser.add_argument('--download', help='Download remote file from URL')
+    parser.add_argument('-d', '--download', help='Download remote file from URL')
 
     hashers = parser.add_argument_group('hash algorithms')
     hashers.add_argument('--md5', action='store_true', help='Use md5 hash algorithm (default)')
