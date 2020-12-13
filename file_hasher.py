@@ -36,7 +36,7 @@ class Hasher:
             self.hasher = hashlib.sha256()
 
     def get_filehash(self):
-        """get hash for file on disk"""
+        """hash file on disk"""
         try:
             with self.file.open('rb') as fh:
                 for chunk in iter(lambda: fh.read(4096), b''):
@@ -47,7 +47,7 @@ class Hasher:
             print(f'Something went wrong: {e}')
 
     def get_urlhash(self):
-        """get hash for remote file from url"""
+        """hash remote file from url"""
         try:
             req = request.Request(self.url)
         except Exception as e:
