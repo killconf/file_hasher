@@ -14,7 +14,7 @@ hash_options = []
 
 
 class Hasher:
-
+    """Hash local or remote files and download remote files"""
     def __init__(self, options, file=None, url=None, download=None):
         self.options = options
         if file:
@@ -22,10 +22,7 @@ class Hasher:
         self.url = url
         self.download = download
 
-        if len(self.options) == 0:
-            self.algo = 'md5'
-            self.hasher = hashlib.md5()
-        elif self.options[0] == 'md5':
+        if len(self.options) == 0 or self.options[0] == 'md5':
             self.algo = 'md5'
             self.hasher = hashlib.md5()
         elif self.options[0] == 'sha1':
