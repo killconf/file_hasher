@@ -9,8 +9,8 @@ hash file on disk
 
 hash remote file
 
-`file_hasher.py -u file_hasher.py -u http://www.example.com/images/somefile.jpg --sha256`
+`file_hasher.py -u http://www.example.com/images/somefile.jpg --sha256`
 
-download file
+download remote file
 
 `file_hasher.py -d http://www.example.com/images/somefile.jpg`
