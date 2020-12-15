@@ -39,7 +39,7 @@ class Hasher:
                 for chunk in iter(lambda: fh.read(4096), b''):
                     self.hasher.update(chunk)
 
-            print(f'\n{self.algo}: {self.hasher.hexdigest()}')
+            print(f'\n{self.algo}: {self.hasher.hexdigest()}\n')
         except Exception as e:
             print(f'Something went wrong: {e}')
 
@@ -49,13 +49,12 @@ class Hasher:
             req = request.Request(self.url)
         except Exception as e:
             print(f'Error requesting URL: {e}')
-
         else:
             try:
                 with request.urlopen(req) as response:
                     for chunk in iter(lambda: response.read(4096), b''):
                         self.hasher.update(chunk)
-                print(f'\n{self.url} \n{self.algo}: {self.hasher.hexdigest()}')
+                print(f'\n{self.url} \n{self.algo}: {self.hasher.hexdigest()}\n')
             except Exception as e:
                 print(f'\nSomething went wrong: {e}')
 
@@ -100,5 +99,4 @@ if __name__ == '__main__':
         if getattr(args, arg):
             if arg in ['md5', 'sha1', 'sha256']:
                 hash_options.append(arg)
-
     main()
