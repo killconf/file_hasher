@@ -1,7 +1,6 @@
 import urllib.request as request
 from pathlib import Path
 import hashlib
-import wget
 import argparse
 
 example = '''
@@ -14,7 +13,7 @@ hash_options = []
 
 
 class Hasher:
-    """Hash local or web files and download web files"""
+    """Hash local or web files and download files from the web"""
 
     def __init__(self, options, file=None, url=None, download=None):
         self.options = options
@@ -60,7 +59,7 @@ class Hasher:
                 print(f'\nSomething went wrong: {e}')
 
     def downloader(self):
-        """download remote file to disk"""
+        """download file from web"""
         out = Path.home() / 'Downloads' / f"{self.download.split('/')[-1]}"
 
         try:
