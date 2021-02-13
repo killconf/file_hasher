@@ -14,7 +14,8 @@ hash_options = []
 
 
 class Hasher:
-    """Hash local or remote files and download remote files"""
+    """Hash local or web files and download web files"""
+
     def __init__(self, options, file=None, url=None, download=None):
         self.options = options
         if file:
@@ -58,16 +59,24 @@ class Hasher:
             except Exception as e:
                 print(f'\nSomething went wrong: {e}')
 
-    def write_remote(self):
+    def downloader(self):
         """download remote file to disk"""
-        out = Path.home() / 'Downloads'
+        out = Path.home() / 'Downloads' / f"{self.download.split('/')[-1]}"
 
         try:
-            print(f'\nDownloading: {self.download}')
-            wget.download(self.download, str(out))
-            print('\n\nFile written to: {}'.format(str(out) + '\\' + self.download.split('/')[-1]))
+            req = request.Request(self.download)
         except Exception as e:
-            exit(f'\nwget error: {e}')
+            print(f'Error requesting URL: {e}')
+        else:
+            try:
+                with request.urlopen(req) as response:
+                    with out.open('wb') as fh:
+                        for chunk in iter(lambda: response.read(4096), b''):
+                            fh.write(chunk)
+            except Exception as e:
+                print(f'Problem downloading file: {e}')
+            else:
+                print(f'\nFile written to: {str(out)}')
 
 
 def main():
@@ -77,7 +86,7 @@ def main():
     if args.url:
         h.get_urlhash()
     if args.download:
-        h.write_remote()
+        h.downloader()
 
 
 if __name__ == '__main__':
