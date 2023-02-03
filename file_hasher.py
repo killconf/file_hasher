@@ -1,7 +1,7 @@
+import argparse
+import hashlib
 import urllib.request as request
 from pathlib import Path
-import hashlib
-import argparse
 
 example = '''
 python file_hasher.py -f \\temp\\evil.exe --sha256
