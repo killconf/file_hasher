@@ -1,110 +1,127 @@
+"""file_hasher.py: Hash local or web files and download files from the web"""
 import argparse
 import hashlib
 import urllib.request as request
 from pathlib import Path
+from tqdm import tqdm
 
-example = '''
-python file_hasher.py -f \\temp\\evil.exe --sha256
-python file_hasher.py -u <url> --sha1
+EXAMPLES = '''
+Examples:
+---------
+python file_hasher.py -f \\temp\\evil.exe -a sha256
+python file_hasher.py -u <url> -a sha1
 python file_hasher.py -d <url>
 '''
-
-hash_options = []
 
 
 class Hasher:
     """Hash local or web files and download files from the web"""
+    HASH_OPTIONS = {
+    'md5': hashlib.md5,
+    'sha1': hashlib.sha1,
+    'sha256': hashlib.sha256,
+    }
 
-    def __init__(self, options, file=None, url=None, download=None):
-        self.options = options
-        if file:
-            self.file = Path(file)
+    def __init__(self, algorithm, file=None, url=None, download=None):
+        """initialize hasher object
+        Args:
+            algorithm (str): hash algorithm
+            file (str): file path
+            url (str): url of file
+            download (str): url to download file
+        """
+        self.algorithm = algorithm
+        self.file = Path(file) if file else None
         self.url = url
         self.download = download
-
-        if len(self.options) == 0 or self.options[0] == 'md5':
-            self.algo = 'md5'
-            self.hasher = hashlib.md5()
-        elif self.options[0] == 'sha1':
-            self.algo = 'sha1'
-            self.hasher = hashlib.sha1()
-        elif self.options[0] == 'sha256':
-            self.algo = 'sha256'
-            self.hasher = hashlib.sha256()
+        self.hasher = self.HASH_OPTIONS[self.algorithm]()
+        
+    def _read_chunks(self, fh):
+        """read file in chunks"""
+        for chunk in iter(lambda: fh.read(4096), b''):
+            yield chunk
 
     def get_filehash(self):
         """hash file on disk"""
+        if not self.file.exists():
+            print(f'File not found: {self.file}')
+            return
         try:
             with self.file.open('rb') as fh:
-                for chunk in iter(lambda: fh.read(4096), b''):
+                for chunk in self._read_chunks(fh):
                     self.hasher.update(chunk)
 
-            print(f'\n{self.algo}: {self.hasher.hexdigest()}\n')
+            print(f'\n{self.algorithm}: {self.hasher.hexdigest()}\n')
         except Exception as e:
-            print(f'Something went wrong: {e}')
+            print(f'Error getting file hash: {e}')
 
     def get_urlhash(self):
         """hash remote file from url"""
+        if not self.url:
+            print('No URL provided.')
+            return
         try:
             req = request.Request(self.url)
-        except Exception as e:
-            print(f'Error requesting URL: {e}')
-        else:
-            try:
-                with request.urlopen(req) as response:
-                    for chunk in iter(lambda: response.read(4096), b''):
-                        self.hasher.update(chunk)
-                print(f'\n{self.url} \n{self.algo}: {self.hasher.hexdigest()}\n')
-            except Exception as e:
-                print(f'\nSomething went wrong: {e}')
+            with request.urlopen(req) as response:
 
+                for chunk in self._read_chunks(response):
+                    self.hasher.update(chunk)
+
+            print(f'\n{self.url} \n{self.algorithm}: {self.hasher.hexdigest()}\n')
+        except Exception as e:
+            print(f'Error hashing file from URL: {e}')
+        
     def downloader(self):
         """download file from web"""
-        out = Path.home() / 'Downloads' / f"{self.download.split('/')[-1]}"
+        out = Path.cwd() / f"{self.download.split('/')[-1]}"
 
         try:
             req = request.Request(self.download)
+            with request.urlopen(req) as response:
+                # get content length
+                content_length = int(response.headers['Content-Length'])
+                total = int(content_length) if content_length > 0 else None
+
+                with out.open('wb') as fh:
+                    # create progress bar
+                    progress = tqdm(total=total, unit='B', unit_scale=True)
+
+                    for chunk in self._read_chunks(response):
+                        fh.write(chunk)
+                        progress.update(len(chunk))
+                    # close progress bar
+                    progress.close()
+            print(f'\nDownloaded: {out}\n')
         except Exception as e:
-            print(f'Error requesting URL: {e}')
-        else:
-            try:
-                with request.urlopen(req) as response:
-                    with out.open('wb') as fh:
-                        for chunk in iter(lambda: response.read(4096), b''):
-                            fh.write(chunk)
-            except Exception as e:
-                print(f'Problem downloading file: {e}')
-            else:
-                print(f'\nFile written to: {str(out)}')
+            print(f'Error downloading file: {e}')
 
-
-def main():
-    h = Hasher(hash_options, args.file, args.url, args.download)
-    if args.file:
-        h.get_filehash()
-    if args.url:
-        h.get_urlhash()
-    if args.download:
-        h.downloader()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Hash local files or web files', epilog=example,
+def get_args():
+    parser = argparse.ArgumentParser(description='Hash local files or web files', epilog=EXAMPLES,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-f', '--file', help='Full path to file on disk')
     parser.add_argument('-u', '--url', help='URL of file')
     parser.add_argument('-d', '--download', help='Download remote file from URL')
 
     hashers = parser.add_argument_group('hash algorithms')
-    hashers.add_argument('--md5', action='store_true', help='Use md5 hash algorithm (default)')
-    hashers.add_argument('--sha1', action='store_true', help='Use sha1 hash algorithm')
-    hashers.add_argument('--sha256', action='store_true', help='Use sha256 hash algorithm')
+    hashers.add_argument('-a', '--algorithm', choices=['md5', 'sha1', 'sha256'], help='Hash algorithm (default is md5)')
+    return parser.parse_args()
+    
 
-    args = parser.parse_args()
+def main():
+    args = get_args()
+    
+    algorithm = args.algorithm if args.algorithm else 'md5'
 
-    downloads = Path.home() / 'Downloads'
-    for arg in vars(args):
-        if getattr(args, arg):
-            if arg in ['md5', 'sha1', 'sha256']:
-                hash_options.append(arg)
+    if args.file and Path(args.file).exists():
+        hasher = Hasher(algorithm, file=args.file)
+        hasher.get_filehash()
+
+    elif args.url:
+        hasher = Hasher(algorithm, url=args.url)
+        hasher.get_urlhash()
+    elif args.download:
+        hasher = Hasher(algorithm, download=args.download)
+        hasher.downloader()
+
+if __name__ == '__main__':
     main()
